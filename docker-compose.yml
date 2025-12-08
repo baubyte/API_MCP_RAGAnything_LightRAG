@@ -1,17 +1,71 @@
+version: '3.8'
+
 services:
-  raganything-db:
+  # PostgreSQL database with pgvector and Apache AGE extensions
+  postgres:
     build:
       context: .
       dockerfile: Dockerfile.db
-    container_name: raganything-pgvector
+    container_name: raganything-postgres
     environment:
       POSTGRES_USER: raganything
       POSTGRES_PASSWORD: raganything
       POSTGRES_DB: raganything
     ports:
       - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U raganything -d raganything"]
-      interval: 5s
+      test: ["CMD-SHELL", "pg_isready -U raganything"]
+      interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - raganything-network
+
+  # RAG-Anything API application
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: raganything-api
+    ports:
+      - "8004:8004"
+    environment:
+      # PostgreSQL connection (uses service name as host)
+      POSTGRES_USER: raganything
+      POSTGRES_PASSWORD: raganything
+      POSTGRES_DATABASE: raganything
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      # API Configuration (override from .env if needed)
+      OPEN_ROUTER_API_KEY: ${OPEN_ROUTER_API_KEY}
+      OPEN_ROUTER_API_URL: ${OPEN_ROUTER_API_URL:-https://openrouter.ai/api/v1}
+      # RAG Configuration
+      COSINE_THRESHOLD: ${COSINE_THRESHOLD:-0.2}
+      MAX_CONCURRENT_FILES: ${MAX_CONCURRENT_FILES:-1}
+      # Server Configuration
+      MCP_TRANSPORT: ${MCP_TRANSPORT:-sse}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-["*"]}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      # Persist RAG storage and output directories
+      - rag_storage:/tmp/rag_storage
+      - output_data:/tmp/output
+    networks:
+      - raganything-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  rag_storage:
+    driver: local
+  output_data:
+    driver: local
+
+networks:
+  raganything-network:
+    driver: bridge

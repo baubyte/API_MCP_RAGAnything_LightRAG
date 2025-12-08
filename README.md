@@ -59,6 +59,62 @@ This design ensures:
     docker-compose up -d  # If using Docker Compose
     ```
 
+## Docker Deployment (Recommended)
+
+### Quick Start with Docker Compose
+
+1. **Create your environment file:**
+
+    ```bash
+    cp .env.example .env
+    # Edit .env and add your OPEN_ROUTER_API_KEY
+    ```
+
+2. **Start all services:**
+
+    ```bash
+    docker-compose up -d
+    ```
+
+    This will start:
+    - PostgreSQL with pgvector and Apache AGE extensions
+    - RAG-Anything API on port 8004
+
+3. **Check service health:**
+
+    ```bash
+    docker-compose ps
+    curl http://localhost:8004/api/v1/health
+    ```
+
+4. **View logs:**
+
+    ```bash
+    docker-compose logs -f api
+    ```
+
+5. **Stop services:**
+
+    ```bash
+    docker-compose down
+    ```
+
+### Docker Commands
+
+```bash
+# Build images
+docker-compose build
+
+# Start in foreground (see logs)
+docker-compose up
+
+# Restart specific service
+docker-compose restart api
+
+# Remove all containers and volumes
+docker-compose down -v
+```
+
 ## Configuration
 
 Create a `.env` file in the root directory with the following variables:
