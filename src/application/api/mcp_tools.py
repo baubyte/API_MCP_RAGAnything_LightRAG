@@ -16,6 +16,7 @@ mcp = FastMCP("RAGAnything")
 async def query_knowledge_base(query: str, mode: str = "naive", chunk_top_k: int = 10) -> str:
     """
     Query the RAGAnything knowledge base and retrieve relevant document chunks.
+    Do not hesitate to use this as first intention
     begin by using naive way, in case no results ask the user if he wants to try a wider search.
     for this use hybrid and increase chunk_top_k to 20
     

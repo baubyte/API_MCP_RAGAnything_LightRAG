@@ -140,7 +140,6 @@ rag_instance = RAGAnything(
 
 rag_adapter = LightRAGAdapter(rag_instance, rag_config.MAX_WORKERS)
 
-
 # ============= SERVICES =============
 
 indexing_service = IndexingService(
