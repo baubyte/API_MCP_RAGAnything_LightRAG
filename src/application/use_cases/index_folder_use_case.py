@@ -34,8 +34,7 @@ class IndexFolderUseCase:
                 folder_path=request.folder_path,
                 output_dir=output_dir,
                 recursive=request.recursive,
-                file_extensions=request.file_extensions,
-                max_workers=request.max_workers,
+                file_extensions=request.file_extensions
             )
             
             return {

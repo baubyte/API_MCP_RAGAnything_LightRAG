@@ -131,13 +131,28 @@ POSTGRES_DATABASE=raganything
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
 
+# Model Configuration
+CHAT_MODEL=openai/gpt-4o-mini
+EMBEDDING_MODEL=text-embedding-3-small
+EMBEDDING_DIM=1536
+MAX_TOKEN_SIZE=8192
+VISION_MODEL=openai/gpt-4o
+
+# Data Processing Configuration
+ENABLE_IMAGE_PROCESSING=True
+ENABLE_TABLE_PROCESSING=True
+ENABLE_EQUATION_PROCESSING=True
+
 # LightRAG Configuration
+RAG_STORAGE_TYPE=postgres # 'postgres' (uses PGVector/AGE) or 'local' (uses NanoVectorDB/Json)
 COSINE_THRESHOLD=0.2  # Similarity threshold (0.0-1.0, default: 0.2)
 MAX_CONCURRENT_FILES=1  # Number of files to process concurrently
 
 # Server Configuration
-MCP_TRANSPORT=stdio  # stdio, sse, or streamable
-ALLOWED_ORIGINS=["*"]  # CORS allowed origins
+MCP_TRANSPORT=sse # 'stdio', 'sse', or 'streamable'
+ALLOWED_ORIGINS=["*"] # List of allowed origins for CORS
+HOST=0.0.0.0 # Server host
+PORT=8000 # Server port
 ```
 
 ### COSINE_THRESHOLD Guide

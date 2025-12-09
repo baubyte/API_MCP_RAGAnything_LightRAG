@@ -30,7 +30,6 @@ class RAGEnginePort(ABC):
         output_dir: str,
         recursive: bool = True,
         file_extensions: list[str] | None = None,
-        max_workers: int | None = None,
     ) -> Dict[str, Any]:
         """
         Index all documents in a folder.

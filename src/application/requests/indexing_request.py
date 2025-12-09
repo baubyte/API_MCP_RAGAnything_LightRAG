@@ -17,6 +17,3 @@ class IndexFolderRequest(BaseModel):
     display_stats: bool = Field(
         default=True, description="Display processing statistics"
     )
-    max_workers: Optional[int] = Field(
-        default=None, description="Number of parallel workers for folder processing"
-    )

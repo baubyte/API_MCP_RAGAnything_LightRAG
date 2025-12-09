@@ -5,27 +5,22 @@ Simplified following hexagonal architecture pattern from pickpro_indexing_api.
 import contextlib
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import text
 from config import AppConfig
-from dependencies import postgres_engine, rag_adapter
+from dependencies import rag_adapter
 from application.api.indexing_routes import indexing_router
 from application.api.query_routes import query_router
 from application.api.health_routes import health_router
 from application.api.mcp_tools import mcp
+import uvicorn
+
 
 
 @contextlib.asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manage the lifespan of the application."""
     async with contextlib.AsyncExitStack() as stack:
-        # Initialize database tables
-        from infrastructure.database.models.base import Base
-        async with postgres_engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-        
         # Initialize RAG engine
         await rag_adapter.initialize()
-        
         yield
 
 
@@ -61,5 +56,7 @@ elif app_config.MCP_TRANSPORT == "sse":
 # ============= MAIN =============
 
 if __name__ == "__main__":
-    # Standard usage: stdio for Claude Desktop
-    mcp.run(transport="stdio")
+    uvicorn.run(app, host=app_config.HOST, port=app_config.PORT)
+    if app_config.MCP_TRANSPORT == "stdio":
+        # Standard usage: stdio for Claude Desktop
+        mcp.run(transport="stdio")

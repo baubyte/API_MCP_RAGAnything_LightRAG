@@ -2,6 +2,8 @@
 MCP tools for RAGAnything.
 These tools are registered with FastMCP for Claude Desktop integration.
 """
+from dependencies import get_query_use_case
+from application.requests.query_request import QueryRequest
 from fastmcp import FastMCP
 import json
 
@@ -11,28 +13,26 @@ mcp = FastMCP("RAGAnything")
 
 
 @mcp.tool()
-async def query_knowledge_base(query: str) -> str:
+async def query_knowledge_base(query: str, mode: str = "naive", chunk_top_k: int = 10) -> str:
     """
     Query the RAGAnything knowledge base and retrieve relevant document chunks.
+    begin by using naive way, in case no results ask the user if he wants to try a wider search.
+    for this use hybrid and increase chunk_top_k to 20
     
     Args:
         query: The question or query to search for in the knowledge base
+        mode: The query mode (naive, local, global, hybrid)
     
     Returns:
         str: JSON string containing relevant chunks from the knowledge base
     """
-    # This is a placeholder - actual implementation will be injected via dependencies
-    # The real query logic will be wired through dependency injection
-    from dependencies import get_query_use_case
-    from application.requests.query_request import QueryRequest
-    
     try:
         use_case = await get_query_use_case()
         request = QueryRequest(
             query=query,
-            mode="naive",
+            mode=mode,
             only_need_context=True,
-            chunk_top_k=10,
+            chunk_top_k=chunk_top_k,
             include_references=True,
             enable_rerank=False
         )

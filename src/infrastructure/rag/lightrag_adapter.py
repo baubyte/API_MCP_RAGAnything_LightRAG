@@ -12,7 +12,7 @@ class LightRAGAdapter(RAGEnginePort):
     Wraps the RAGAnything instance and provides a clean interface.
     """
 
-    def __init__(self, rag_instance: RAGAnything) -> None:
+    def __init__(self, rag_instance: RAGAnything, max_workers: int) -> None:
         """
         Initialize the LightRAG adapter.
 
@@ -21,6 +21,7 @@ class LightRAGAdapter(RAGEnginePort):
         """
         self.rag = rag_instance
         self._initialized = False
+        self.max_workers = max_workers
 
     async def initialize(self) -> bool:
         """
@@ -65,8 +66,7 @@ class LightRAGAdapter(RAGEnginePort):
         folder_path: str,
         output_dir: str,
         recursive: bool = True,
-        file_extensions: list[str] | None = None,
-        max_workers: int | None = None,
+        file_extensions: list[str] | None = None
     ) -> Dict[str, Any]:
         """
         Index all documents in a folder.
@@ -89,7 +89,7 @@ class LightRAGAdapter(RAGEnginePort):
                 file_extensions=file_extensions,
                 recursive=recursive,
                 display_stats=True,
-                max_workers=max_workers
+                max_workers=self.max_workers
             )
             return result
         except Exception as e:

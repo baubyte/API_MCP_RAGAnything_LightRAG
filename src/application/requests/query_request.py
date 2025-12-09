@@ -7,12 +7,11 @@ class QueryRequest(BaseModel):
     """
 
     query: str = Field(..., description="The query string")
-    mode: str = Field(default="hybrid", description="Query mode: naive, local, global, hybrid")
+    mode: str = Field(default="naive", description="Query mode: naive, local, global, hybrid")
     stream: bool = Field(default=False, description="Enable streaming response")
     
-    # QueryParam options for advanced control
     only_need_context: bool = Field(
-        default=False, description="Return only chunks, no LLM generation"
+        default=True, description="Return only chunks, no LLM generation"
     )
     only_need_prompt: bool = Field(
         default=False, description="Return only the constructed prompt"
@@ -27,5 +26,5 @@ class QueryRequest(BaseModel):
         default=True, description="Enable reranking of results"
     )
     include_references: bool = Field(
-        default=False, description="Include references in response"
+        default=True, description="Include references in response"
     )
