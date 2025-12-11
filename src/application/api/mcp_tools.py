@@ -41,26 +41,17 @@ async def query_knowledge_base(query: str, mode: str = "naive", chunk_top_k: int
         - "chunks": Array of relevant text segments with references
         - "count": Total number of chunks found
     """
-    try:
-        use_case = await get_query_use_case()
-        request = QueryRequest(
-            query=query,
-            mode=mode,
-            only_need_context=True,
-            chunk_top_k=chunk_top_k,
-            include_references=True,
-            enable_rerank=False
-        )
-        
-        result = await use_case.execute(request)
-        
-        if not result.chunks:
-            return "No relevant chunks found for your query."
-        
-        return json.dumps({
-            "chunks": result.chunks,
-            "count": len(result.chunks)
-        }, indent=2)
-        
-    except Exception as e:
-        return f"Error querying knowledge base: {str(e)}"
+    use_case = await get_query_use_case()
+    
+    request = QueryRequest(
+        query=query,
+        mode=mode,
+        only_need_context=True,
+        chunk_top_k=chunk_top_k,
+        include_references=True,
+        enable_rerank=False
+    )
+    
+    result = await use_case.execute(request)
+    
+    return result.model_dump_json()

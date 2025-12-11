@@ -266,7 +266,7 @@ curl -X POST "http://127.0.0.1:8004/api/v1/query" \
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `query` | string | required | The question to ask |
-| `mode` | string | `"hybrid"` | Query mode: `local`, `global`, `hybrid`, `naive` |
+| `mode` | string | `"hybrid"` | Query mode (see [Query Modes](#query-modes) below) |
 | `stream` | boolean | `false` | Enable streaming response |
 | `only_need_context` | boolean | `false` | Return only chunks/entities (no LLM) |
 | `only_need_prompt` | boolean | `false` | Return constructed prompt only |
@@ -275,11 +275,89 @@ curl -X POST "http://127.0.0.1:8004/api/v1/query" \
 | `enable_rerank` | boolean | `true` | Enable result reranking |
 | `include_references` | boolean | `false` | Include sources in response |
 
-**Response Formats:**
+#### Query Modes
 
-- **Standard Query**: `{"result": "LLM answer", "chunks": [...], "entities": [...]}` (if include_references=true)
-- **Context Only**: `{"chunks": [...], "entities": [...], "relationships": [...]}`
-- **Prompt Only**: `{"prompt": "constructed prompt"}`
+Choose the appropriate mode based on your use case:
+
+| Mode | Best For | Returns | Description |
+|------|----------|---------|-------------|
+| `local` | Specific entity lookups | Entities + related chunks | Focuses on entities and their related chunks based on **low-level keywords**. Best for precise, targeted queries about specific concepts. |
+| `global` | High-level questions | Relationships + connected entities | Focuses on relationships and their connected entities based on **high-level keywords**. Best for understanding connections and themes. |
+| `hybrid` | General questions | Combined local + global | Combines local and global results using **round-robin merging**. Recommended default for most queries. |
+| `mix` | Comprehensive retrieval | KG data + vector chunks | Includes knowledge graph data **plus** vector-retrieved document chunks. Most comprehensive but potentially slower. |
+| `naive` | Simple vector search | Chunks only | Only vector-retrieved chunks; **entities and relationships arrays are empty**. Fastest mode, good for simple document search. |
+| `bypass` | Direct LLM queries | Empty data arrays | All data arrays are empty; query goes directly to LLM without retrieval. Use for general questions not requiring document context. |
+
+**Response Structure:**
+
+```json
+{
+  "status": "success",
+  "message": "Query executed successfully",
+  "answer": "LLM generated response...",
+  "data": {
+    "entities": [
+      {
+        "entity_name": "Entity Name",
+        "entity_type": "CONCEPT",
+        "description": "Entity description",
+        "source_id": "chunk-abc123",
+        "file_path": "/path/to/document.pdf",
+        "created_at": 1765266671,
+        "reference_id": {"ref": "1"}
+      }
+    ],
+    "relationships": [
+      {
+        "src_id": "Source Entity",
+        "tgt_id": "Target Entity",
+        "description": "Relationship description",
+        "keywords": "related, connected",
+        "weight": 1.0,
+        "source_id": "chunk-abc123",
+        "file_path": "/path/to/document.pdf",
+        "created_at": 1765266671,
+        "reference_id": {"ref": "1"}
+      }
+    ],
+    "chunks": [
+      {
+        "content": "Document text content...",
+        "file_path": "/path/to/document.pdf",
+        "chunk_id": "chunk-abc123",
+        "reference_id": "1"
+      }
+    ],
+    "references": [
+      {
+        "reference_id": "1",
+        "file_path": "/path/to/document.pdf"
+      }
+    ]
+  },
+  "metadata": {
+    "query_mode": "hybrid",
+    "keywords": {
+      "high_level": ["concept", "theme"],
+      "low_level": ["specific", "term"]
+    },
+    "processing_info": {
+      "total_entities_found": 50,
+      "total_relations_found": 30,
+      "entities_after_truncation": 20,
+      "relations_after_truncation": 15,
+      "merged_chunks_count": 25,
+      "final_chunks_count": 10
+    }
+  }
+}
+```
+
+> **Note:** The `processing_info` field is optional and may not be present in all responses, especially when the query result is empty or in `bypass`/`naive` modes.
+
+**Context-Only Response** (`only_need_context=true`):
+
+Returns the same structure but without the `answer` field (no LLM generation).
 
 ### 4. Health Check (`GET /api/v1/health`)
 
@@ -331,20 +409,30 @@ mcp-raganything/
 │   ├── dependencies.py        # Dependency injection
 │   ├── domain/                # Business logic layer
 │   │   ├── entities/          # Domain entities (Document, QueryResult)
-│   │   ├── ports/             # Interfaces (RAGEnginePort, DocumentRepoPort)
-│   │   └── services/          # Domain services (IndexingService, QueryService)
+│   │   ├── ports/             # Interfaces (RAGEnginePort)
+│   │   └── services/          # Domain services (IndexingService)
 │   ├── application/           # Application layer
 │   │   ├── requests/          # Request DTOs
 │   │   ├── use_cases/         # Use case implementations
 │   │   └── api/               # FastAPI routes and MCP tools
 │   └── infrastructure/        # Infrastructure layer
-│       ├── rag/               # LightRAG adapter
-│       └── database/          # PostgreSQL adapters and models
+│       └── rag/               # LightRAG adapter
 ├── pyproject.toml             # Project dependencies
 └── .env                       # Environment configuration
 ```
 
 ## Use Cases
+
+### Query Mode Selection Guide
+
+| Scenario | Recommended Mode | Reason |
+|----------|------------------|--------|
+| "What is X?" (specific concept) | `local` | Targets specific entities |
+| "How does X relate to Y?" | `global` | Focuses on relationships |
+| General knowledge questions | `hybrid` | Balances both approaches |
+| Full document search with KG | `mix` | Most comprehensive |
+| Simple keyword/semantic search | `naive` | Fast, no KG overhead |
+| Chat without document context | `bypass` | Direct LLM access |
 
 ### Retrieval-Only (Without LLM Generation)
 

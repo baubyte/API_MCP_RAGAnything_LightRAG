@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Any
 from domain.entities.query_result import QueryResult
-
+from domain.entities.query_entity import Query
 
 class RAGEnginePort(ABC):
     """
@@ -49,10 +49,7 @@ class RAGEnginePort(ABC):
     @abstractmethod
     async def query(
         self,
-        query: str,
-        mode: str = "hybrid",
-        only_need_context: bool = False,
-        **kwargs
+        query: Query
     ) -> QueryResult:
         """
         Query the RAG system.

@@ -1,8 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import Optional
 
-
-class QueryRequest(BaseModel):
+class Query(BaseModel):
     """
     Request model for querying the RAG system.
     """

@@ -1,9 +1,11 @@
 from typing import Dict, Any
+from xml.etree.ElementInclude import include
 from domain.ports.rag_engine import RAGEnginePort
 from domain.entities.query_result import QueryResult
 from raganything import RAGAnything
 from lightrag import QueryParam
 from fastapi.logger import logger
+from domain.entities.query_entity import Query
 
 
 class LightRAGAdapter(RAGEnginePort):
@@ -91,17 +93,14 @@ class LightRAGAdapter(RAGEnginePort):
                 display_stats=True,
                 max_workers=self.max_workers
             )
-            return result
+            return result # type: ignore
         except Exception as e:
             logger.error(f"Failed to index folder {folder_path}: {e}", exc_info=True)
             return {"error": str(e)}
 
     async def query(
         self,
-        query: str,
-        mode: str = "hybrid",
-        only_need_context: bool = False,
-        **kwargs
+        query: Query,
     ) -> QueryResult:
         """
         Query the RAG system.
@@ -115,69 +114,23 @@ class LightRAGAdapter(RAGEnginePort):
         Returns:
             QueryResult: The structured query result.
         """
-        try:
-            # Ensure initialized
-            await self.initialize()
+        # Ensure initialized
+        await self.initialize()
+        
+        # Create QueryParam from arguments
+        query_param = QueryParam(**query.model_dump(exclude={"query", "include_metadata"}))
+
+        result = QueryResult(**await self.rag.lightrag.aquery_data(query.query, param=query_param)) # type: ignore
+
+        if not query.include_metadata:
+            result = QueryResult(**result.model_dump(exclude={"metadata"}))
+
+        if not query.include_references:
+            result = QueryResult(**result.model_dump(exclude={"data"}))
             
-            # Create QueryParam from arguments
-            query_param = QueryParam(
-                mode=mode,
-                only_need_context=only_need_context,
-                only_need_prompt=kwargs.get("only_need_prompt", False),
-                top_k=kwargs.get("top_k", 40),
-                chunk_top_k=kwargs.get("chunk_top_k", 20),
-                enable_rerank=kwargs.get("enable_rerank", True),
-                include_references=kwargs.get("include_references", False),
-                stream=False  # We handle streaming at FastAPI level
-            )
-            
-            # Get context data
-            result = await self.rag.lightrag.aquery_data(query, param=query_param)
-            
-            if result.get("status") != "success":
-                error_msg = result.get("message", "Query failed")
-                return QueryResult(
-                    query=query,
-                    answer=f"Error: {error_msg}",
-                    chunks=[]
-                )
-            
-            data = result.get("data", {})
-            
-            # If only context is needed, return immediately
-            if only_need_context:
-                return QueryResult(
-                    query=query,
-                    answer=None,
-                    chunks=data.get("chunks", []),
-                    entities=data.get("entities", []),
-                    relationships=data.get("relationships", [])
-                )
-            
-            # If only need prompt
-            if kwargs.get("only_need_prompt", False):
-                return QueryResult(
-                    query=query,
-                    answer=None,
-                    chunks=[],
-                    metadata={"prompt": data.get("prompt", "")}
-                )
-            
-            # Standard query with LLM answer
-            llm_result = await self.rag.lightrag.aquery(query, param=query_param)
-            
-            return QueryResult(
-                query=query,
-                answer=llm_result,
-                chunks=data.get("chunks", []),
-                entities=data.get("entities", []) if kwargs.get("include_references") else None,
-                relationships=data.get("relationships", []) if kwargs.get("include_references") else None
-            )
-            
-        except Exception as e:
-            logger.error(f"Failed to query RAG: {e}", exc_info=True)
-            return QueryResult(
-                query=query,
-                answer=f"Error: {str(e)}",
-                chunks=[]
-            )
+        if not query.only_need_context:
+            answer = await self.rag.lightrag.aquery(query.query, param=query_param) # type: ignore
+
+        result.answer = answer if answer else None # type: ignore
+
+        return result

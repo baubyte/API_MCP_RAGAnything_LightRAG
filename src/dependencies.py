@@ -5,17 +5,12 @@ Follows the pickpro_indexing_api pattern for wiring components.
 import os
 import tempfile
 import tempfile
-
 from raganything import RAGAnything, RAGAnythingConfig
 from lightrag.llm.openai import openai_complete_if_cache, openai_embed
 from lightrag.utils import EmbeddingFunc
-
 from config import DatabaseConfig, LLMConfig, RAGConfig, AppConfig
 from infrastructure.rag.lightrag_adapter import LightRAGAdapter
 from domain.services.indexing_service import IndexingService
-
-
-from domain.services.query_service import QueryService
 from application.use_cases.index_file_use_case import IndexFileUseCase
 from application.use_cases.index_folder_use_case import IndexFolderUseCase
 from application.use_cases.query_use_case import QueryUseCase
@@ -146,10 +141,6 @@ indexing_service = IndexingService(
     rag_engine=rag_adapter
 )
 
-query_service = QueryService(
-    rag_engine=rag_adapter
-)
-
 # ============= DEPENDENCY INJECTION FUNCTIONS =============
 
 
@@ -180,4 +171,4 @@ async def get_query_use_case() -> QueryUseCase:
     Returns:
         QueryUseCase: The configured use case.
     """
-    return QueryUseCase(query_service)
+    return QueryUseCase(rag_adapter)
