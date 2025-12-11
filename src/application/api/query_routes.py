@@ -11,7 +11,12 @@ logger = logging.getLogger(__name__)
 query_router = APIRouter(tags=["Query"])
 
 
-@query_router.post("/query", response_model=QueryResult, status_code=status.HTTP_200_OK, response_model_exclude_none=True)
+@query_router.post(
+    "/query",
+    response_model=QueryResult,
+    status_code=status.HTTP_200_OK,
+    response_model_exclude_none=True,
+)
 async def query_rag(
     request: QueryRequest,
     use_case: QueryUseCase = Depends(get_query_use_case),

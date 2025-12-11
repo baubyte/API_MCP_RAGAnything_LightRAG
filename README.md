@@ -66,8 +66,12 @@ This design ensures:
 1. **Create your environment file:**
 
     ```bash
-    cp .env.example .env
-    # Edit .env and add your OPEN_ROUTER_API_KEY
+    cp .env.example .env.docker
+    # Edit .env.docker and add your OPEN_ROUTER_API_KEY
+    # Make sure POSTGRES_HOST=postgres (Docker service name)
+
+    cp .env.lightrag.server.example .env.lightrag.server
+    # Edit .env.lightrag.server and add your LLM_BINDING_API_KEY
     ```
 
 2. **Start all services:**
@@ -78,26 +82,48 @@ This design ensures:
 
     This will start:
     - PostgreSQL with pgvector and Apache AGE extensions
-    - RAG-Anything API on port 8004
+    - RAG-Anything API on port 8000
+    - LightRAG Server with Web UI on port 9621
 
 3. **Check service health:**
 
     ```bash
     docker-compose ps
-    curl http://localhost:8004/api/v1/health
+    curl http://localhost:8000/api/v1/health
+    curl http://localhost:9621/health
     ```
 
-4. **View logs:**
+4. **Access LightRAG Web UI:**
+
+    Open `http://localhost:9621` in your browser to access the LightRAG Web UI for:
+    - Document indexing and management
+    - Knowledge graph exploration
+    - RAG query interface
+
+5. **View logs:**
 
     ```bash
     docker-compose logs -f api
+    docker-compose logs -f lightrag-server
     ```
 
-5. **Stop services:**
+6. **Stop services:**
 
     ```bash
     docker-compose down
     ```
+
+### LightRAG Server
+
+The LightRAG Server provides a standalone Web UI and API for RAG operations. It shares the same PostgreSQL database as the main API.
+
+**Features:**
+- 📊 Web UI for document management and knowledge graph visualization
+- 🔍 Interactive RAG query interface
+- 🔌 Ollama-compatible API for integration with Open WebUI
+- 📈 Swagger API documentation at `http://localhost:9621/docs`
+
+**Configuration:** See `.env.lightrag.server.example` for all available options.
 
 ### Docker Commands
 
@@ -186,18 +212,24 @@ All endpoints use the `/api/v1` prefix.
 
 ### 1. Index a Single Document (`POST /api/v1/index`)
 
-Upload and process a single document into the knowledge base.
+Upload and process a single document into the knowledge base (background processing).
 
 ```bash
 curl -X POST "http://127.0.0.1:8004/api/v1/index" \
      -F "file=@/path/to/document.pdf"
 ```
 
+**Response** (HTTP 202 Accepted):
+```json
+{
+  "status": "accepted",
+  "message": "File indexing started in background"
+}
+```
+
 ### 2. Index a Folder (`POST /api/v1/index-folder`)
 
-Process all documents in a folder (supports recursive directory traversal).
-
-**Request:**
+Process all documents in a folder in the background (supports recursive directory traversal).
 
 ```bash
 curl -X POST "http://127.0.0.1:8004/api/v1/index-folder" \
@@ -205,19 +237,26 @@ curl -X POST "http://127.0.0.1:8004/api/v1/index-folder" \
      -d '{
            "folder_path": "/path/to/documents",
            "recursive": true,
-           "file_extensions": [".pdf", ".docx"],
-           "display_stats": true,
-           "max_workers": 5
+           "file_extensions": [".pdf", ".docx"]
          }'
+```
+
+**Response** (HTTP 202 Accepted):
+```json
+{
+  "status": "accepted",
+  "message": "Folder indexing started in background"
+}
 ```
 
 **Parameters:**
 
-- `folder_path` (required): Absolute path to folder
-- `recursive` (optional, default: `true`): Process subdirectories
-- `file_extensions` (optional): Filter specific file types (e.g., `[".pdf", ".docx"]`)
-- `display_stats` (optional, default: `true`): Show processing statistics
-- `max_workers` (optional): Number of parallel workers for processing
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `folder_path` | string | required | Absolute path to folder |
+| `recursive` | boolean | `true` | Process subdirectories |
+| `file_extensions` | array | `null` | Filter specific file types (e.g., `[".pdf", ".docx"]`) |
+| `display_stats` | boolean | `true` | Show processing statistics |
 
 ### 3. Query (`POST /api/v1/query`)
 
@@ -408,9 +447,8 @@ mcp-raganything/
 │   ├── config.py              # Configuration classes
 │   ├── dependencies.py        # Dependency injection
 │   ├── domain/                # Business logic layer
-│   │   ├── entities/          # Domain entities (Document, QueryResult)
-│   │   ├── ports/             # Interfaces (RAGEnginePort)
-│   │   └── services/          # Domain services (IndexingService)
+│   │   ├── entities/          # Domain entities (QueryResult, IndexingResult)
+│   │   └── ports/             # Interfaces (RAGEnginePort)
 │   ├── application/           # Application layer
 │   │   ├── requests/          # Request DTOs
 │   │   ├── use_cases/         # Use case implementations

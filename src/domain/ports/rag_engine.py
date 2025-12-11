@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Any
+from typing import Dict, Any, Optional, List
 from domain.entities.query_result import QueryResult
 from domain.entities.query_entity import Query
+from domain.entities.indexing_result import FileIndexingResult, FolderIndexingResult
+
 
 class RAGEnginePort(ABC):
     """
@@ -10,16 +12,19 @@ class RAGEnginePort(ABC):
     """
 
     @abstractmethod
-    async def index_document(self, file_path: str, output_dir: str) -> bool:
+    async def index_document(
+        self, file_path: str, file_name: str, output_dir: str
+    ) -> FileIndexingResult:
         """
         Index a single document into the RAG system.
 
         Args:
             file_path: Absolute path to the document to index.
+            file_name: Name of the file being indexed.
             output_dir: Directory for processing outputs.
 
         Returns:
-            bool: True if indexing was successful, False otherwise.
+            FileIndexingResult: Structured result of the indexing operation.
         """
         pass
 
@@ -29,8 +34,8 @@ class RAGEnginePort(ABC):
         folder_path: str,
         output_dir: str,
         recursive: bool = True,
-        file_extensions: list[str] | None = None,
-    ) -> Dict[str, Any]:
+        file_extensions: Optional[List[str]] = None,
+    ) -> FolderIndexingResult:
         """
         Index all documents in a folder.
 
@@ -39,18 +44,14 @@ class RAGEnginePort(ABC):
             output_dir: Directory for processing outputs.
             recursive: Whether to process subdirectories recursively.
             file_extensions: Optional list of file extensions to filter.
-            max_workers: Number of parallel workers for processing.
 
         Returns:
-            Dict containing indexing results and statistics.
+            FolderIndexingResult: Structured result with statistics and file details.
         """
         pass
 
     @abstractmethod
-    async def query(
-        self,
-        query: Query
-    ) -> QueryResult:
+    async def query(self, query: Query) -> QueryResult:
         """
         Query the RAG system.
 

@@ -19,3 +19,6 @@ RUN cd /tmp && \
 
 # Cleanup
 RUN rm -rf /tmp/age
+
+# Switch back to non-root user for security
+USER postgres

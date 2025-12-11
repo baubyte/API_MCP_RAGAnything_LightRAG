@@ -17,12 +17,8 @@ class AppConfig(BaseSettings):
     MCP_TRANSPORT: str = Field(
         default="stdio", description="MCP transport mode: stdio, sse, streamable"
     )
-    HOST: str = Field(
-        default="0.0.0.0", description="Server host"
-    )
-    PORT: int = Field(
-        default=8000, description="Server port"
-    )
+    HOST: str = Field(default="0.0.0.0", description="Server host")
+    PORT: int = Field(default=8000, description="Server port")
     UVICORN_LOG_LEVEL: str = Field(
         default="critical", description="Uvicorn log level when running with MCP stdio"
     )

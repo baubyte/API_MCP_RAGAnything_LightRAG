@@ -11,7 +11,9 @@ class QueryRequest(BaseModel):
     conversation_history: Optional[list[dict[str, str]]] = Field(
         default=None, description="Conversation history for context"
     )
-    mode: str = Field(default="naive", description="Query mode: naive, local, global, hybrid")
+    mode: str = Field(
+        default="naive", description="Query mode: naive, local, global, hybrid"
+    )
     stream: bool = Field(default=False, description="Enable streaming response")
     only_need_context: bool = Field(
         default=True, description="Return only chunks, no LLM generation"
@@ -19,12 +21,8 @@ class QueryRequest(BaseModel):
     top_k: int = Field(
         default=40, description="Number of entities/relations to retrieve"
     )
-    chunk_top_k: int = Field(
-        default=20, description="Number of chunks to retrieve"
-    )
-    enable_rerank: bool = Field(
-        default=True, description="Enable reranking of results"
-    )
+    chunk_top_k: int = Field(default=20, description="Number of chunks to retrieve")
+    enable_rerank: bool = Field(default=True, description="Enable reranking of results")
     include_references: bool = Field(
         default=True, description="Include references in response"
     )

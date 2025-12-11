@@ -2,5 +2,8 @@
 rag_storage
 output
 .env
+.env.docker
+.env.lightrag.server
+.env.lightrag.server.docker
 __pycache__
 __init__.py

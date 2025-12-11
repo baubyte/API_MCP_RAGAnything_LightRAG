@@ -12,7 +12,8 @@ class IndexFolderRequest(BaseModel):
         default=True, description="Process subdirectories recursively"
     )
     file_extensions: Optional[list[str]] = Field(
-        default=None, description="List of file extensions to filter (e.g., ['.pdf', '.docx'])"
+        default=None,
+        description="List of file extensions to filter (e.g., ['.pdf', '.docx'])",
     )
     display_stats: bool = Field(
         default=True, description="Display processing statistics"

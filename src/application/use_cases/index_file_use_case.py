@@ -1,6 +1,11 @@
-from domain.services.indexing_service import IndexingService
-from fastapi.logger import logger
+import logging
 import os
+from domain.ports.rag_engine import RAGEnginePort
+from domain.entities.indexing_result import FileIndexingResult
+
+logger = logging.getLogger(__name__)
+
+
 
 
 class IndexFileUseCase:
@@ -9,38 +14,33 @@ class IndexFileUseCase:
     Orchestrates the file indexing process.
     """
 
-    def __init__(self, indexing_service: IndexingService) -> None:
+    def __init__(self, rag_engine: RAGEnginePort, output_dir: str) -> None:
         """
         Initialize the use case.
 
         Args:
-            indexing_service: The service handling indexing operations.
+            rag_engine: Port for RAG engine operations.
+            output_dir: Output directory for processing.
         """
-        self.indexing_service = indexing_service
+        self.rag_engine = rag_engine
+        self.output_dir = output_dir
 
-    async def execute(self, file_path: str, filename: str, output_dir: str) -> dict:
+    async def execute(self, file_path: str, file_name: str) -> FileIndexingResult:
         """
         Execute the file indexing process.
 
         Args:
             file_path: Path to the file to index.
-            filename: Name of the file.
-            output_dir: Output directory for processing.
+            file_name: Name of the file.
 
         Returns:
-            dict: Result message.
+            FileIndexingResult: Structured result of the indexing operation.
         """
-        try:
-            success = await self.indexing_service.index_file(
-                file_path=file_path,
-                filename=filename,
-                output_dir=output_dir
-            )
-            
-            if success:
-                return {"message": f"File {filename} indexed successfully"}
-            else:
-                return {"error": f"Failed to index file {filename}"}
-        except Exception as e:
-            logger.error(f"IndexFileUseCase failed: {e}", exc_info=True)
-            return {"error": str(e)}
+        os.makedirs(self.output_dir, exist_ok=True)
+
+        result = await self.rag_engine.index_document(
+            file_path=file_path, file_name=file_name, output_dir=self.output_dir
+        )
+
+        logger.info(f"Indexation finished with result: {result.model_dump()}")
+        return result

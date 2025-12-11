@@ -2,15 +2,14 @@
 Dependency injection setup for the application.
 Follows the pickpro_indexing_api pattern for wiring components.
 """
+
 import os
-import tempfile
 import tempfile
 from raganything import RAGAnything, RAGAnythingConfig
 from lightrag.llm.openai import openai_complete_if_cache, openai_embed
 from lightrag.utils import EmbeddingFunc
 from config import DatabaseConfig, LLMConfig, RAGConfig, AppConfig
 from infrastructure.rag.lightrag_adapter import LightRAGAdapter
-from domain.services.indexing_service import IndexingService
 from application.use_cases.index_file_use_case import IndexFileUseCase
 from application.use_cases.index_folder_use_case import IndexFolderUseCase
 from application.use_cases.query_use_case import QueryUseCase
@@ -57,7 +56,9 @@ async def llm_model_func(prompt, system_prompt=None, history_messages=[], **kwar
     )
 
 
-async def vision_model_func(prompt, system_prompt=None, history_messages=[], image_data=None, **kwargs):
+async def vision_model_func(
+    prompt, system_prompt=None, history_messages=[], image_data=None, **kwargs
+):
     """Vision function for RAGAnything."""
     messages = []
     if system_prompt:
@@ -71,24 +72,26 @@ async def vision_model_func(prompt, system_prompt=None, history_messages=[], ima
         images = image_data if isinstance(image_data, list) else [image_data]
         for img in images:
             # Simple heuristic: if it looks like a URL, use it; otherwise assume base64
-            url = img if isinstance(img, str) and img.startswith("http") else f"data:image/jpeg;base64,{img}"
-            content.append({
-                "type": "image_url",
-                "image_url": {"url": url}
-            })
+            url = (
+                img
+                if isinstance(img, str) and img.startswith("http")
+                else f"data:image/jpeg;base64,{img}"
+            )
+            content.append({"type": "image_url", "image_url": {"url": url}})
 
     messages.append({"role": "user", "content": content})
 
     return await openai_complete_if_cache(
         llm_config.VISION_MODEL,
-        "Image Description Task", # Dummy prompt to avoid lightrag appending None
+        "Image Description Task",  # Dummy prompt to avoid lightrag appending None
         system_prompt=None,
         history_messages=messages,
         api_key=llm_config.api_key,
         base_url=llm_config.api_base_url,
-        messages=messages, # Explicitly pass constructed messages
+        messages=messages,  # Explicitly pass constructed messages
         **kwargs,
     )
+
 
 embedding_func = EmbeddingFunc(
     embedding_dim=llm_config.EMBEDDING_DIM,
@@ -116,30 +119,28 @@ rag_instance = RAGAnything(
     llm_model_func=llm_model_func,
     vision_model_func=vision_model_func,
     embedding_func=embedding_func,
-    lightrag_kwargs={
-        "kv_storage": "PGKVStorage",
-        "vector_storage": "PGVectorStorage",
-        "graph_storage": "PGGraphStorage",
-        "doc_status_storage": "PGDocStatusStorage",
-        "cosine_threshold": rag_config.COSINE_THRESHOLD,
-    } if rag_config.RAG_STORAGE_TYPE == "postgres" else {
-        "kv_storage": "JsonKVStorage",
-        "vector_storage": "NanoVectorDBStorage",
-        "graph_storage": "NetworkXStorage",
-        "doc_status_storage": "JsonDocStatusStorage",
-        "cosine_threshold": rag_config.COSINE_THRESHOLD,
-    }
+    lightrag_kwargs=(
+        {
+            "kv_storage": "PGKVStorage",
+            "vector_storage": "PGVectorStorage",
+            "graph_storage": "PGGraphStorage",
+            "doc_status_storage": "PGDocStatusStorage",
+            "cosine_threshold": rag_config.COSINE_THRESHOLD,
+        }
+        if rag_config.RAG_STORAGE_TYPE == "postgres"
+        else {
+            "kv_storage": "JsonKVStorage",
+            "vector_storage": "NanoVectorDBStorage",
+            "graph_storage": "NetworkXStorage",
+            "doc_status_storage": "JsonDocStatusStorage",
+            "cosine_threshold": rag_config.COSINE_THRESHOLD,
+        }
+    ),
 )
 
 # ============= ADAPTERS =============
 
 rag_adapter = LightRAGAdapter(rag_instance, rag_config.MAX_WORKERS)
-
-# ============= SERVICES =============
-
-indexing_service = IndexingService(
-    rag_engine=rag_adapter
-)
 
 # ============= DEPENDENCY INJECTION FUNCTIONS =============
 
@@ -151,7 +152,7 @@ async def get_index_file_use_case() -> IndexFileUseCase:
     Returns:
         IndexFileUseCase: The configured use case.
     """
-    return IndexFileUseCase(indexing_service)
+    return IndexFileUseCase(rag_adapter, OUTPUT_DIR)
 
 
 async def get_index_folder_use_case() -> IndexFolderUseCase:
@@ -161,7 +162,7 @@ async def get_index_folder_use_case() -> IndexFolderUseCase:
     Returns:
         IndexFolderUseCase: The configured use case.
     """
-    return IndexFolderUseCase(indexing_service)
+    return IndexFolderUseCase(rag_adapter, OUTPUT_DIR)
 
 
 async def get_query_use_case() -> QueryUseCase:

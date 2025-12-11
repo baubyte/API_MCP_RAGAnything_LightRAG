@@ -1,7 +1,10 @@
-from domain.services.indexing_service import IndexingService
+import os
+import logging
+from domain.ports.rag_engine import RAGEnginePort
+from domain.entities.indexing_result import FolderIndexingResult
 from application.requests.indexing_request import IndexFolderRequest
-from fastapi.logger import logger
 
+logger = logging.getLogger(__name__)
 
 class IndexFolderUseCase:
     """
@@ -9,38 +12,36 @@ class IndexFolderUseCase:
     Orchestrates the folder indexing process.
     """
 
-    def __init__(self, indexing_service: IndexingService) -> None:
+    def __init__(self, rag_engine: RAGEnginePort, output_dir: str) -> None:
         """
         Initialize the use case.
 
         Args:
-            indexing_service: The service handling indexing operations.
+            rag_engine: Port for RAG engine operations.
+            output_dir: Output directory for processing.
         """
-        self.indexing_service = indexing_service
+        self.rag_engine = rag_engine
+        self.output_dir = output_dir
 
-    async def execute(self, request: IndexFolderRequest, output_dir: str) -> dict:
+    async def execute(self, request: IndexFolderRequest) -> FolderIndexingResult:
         """
         Execute the folder indexing process.
 
         Args:
             request: The indexing request containing folder parameters.
-            output_dir: Output directory for processing.
 
         Returns:
-            dict: Indexing results and statistics.
+            FolderIndexingResult: Structured result with statistics and file details.
         """
-        try:
-            result = await self.indexing_service.index_folder(
-                folder_path=request.folder_path,
-                output_dir=output_dir,
-                recursive=request.recursive,
-                file_extensions=request.file_extensions
-            )
-            
-            return {
-                "message": f"Successfully processed folder: {request.folder_path}",
-                "result": result
-            }
-        except Exception as e:
-            logger.error(f"IndexFolderUseCase failed: {e}", exc_info=True)
-            return {"error": str(e)}
+        os.makedirs(self.output_dir, exist_ok=True)
+
+        result = await self.rag_engine.index_folder(
+            folder_path=request.folder_path,
+            output_dir=self.output_dir,
+            recursive=request.recursive,
+            file_extensions=request.file_extensions,
+        )
+
+        logger.info(f"Indexation finished with result: {result.model_dump()}")
+
+        return result

@@ -17,6 +17,7 @@ FROM python:3.13-slim-bookworm
 # Install system dependencies required by docling and other packages
 RUN apt-get update && apt-get install -y \
     libgomp1 \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
@@ -38,11 +39,7 @@ RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
 USER appuser
 
 # Expose port
-EXPOSE 8004
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:8004/api/v1/health')" || exit 1
+EXPOSE 8000
 
 # Default command: run FastAPI server
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8004"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

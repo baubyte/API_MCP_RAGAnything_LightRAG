@@ -1,6 +1,7 @@
 """Main entry point for the RAGAnything API.
 Simplified following hexagonal architecture pattern from pickpro_indexing_api.
 """
+
 import contextlib
 import sys
 import threading
@@ -15,7 +16,6 @@ from application.api.mcp_tools import mcp
 import uvicorn
 
 
-
 @contextlib.asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manage the lifespan of the application."""
@@ -23,6 +23,7 @@ async def lifespan(app: FastAPI):
         # Initialize RAG engine
         await rag_adapter.initialize()
         yield
+
 
 app = FastAPI(title="RAG Anything API", lifespan=lifespan)
 
@@ -58,18 +59,24 @@ elif app_config.MCP_TRANSPORT == "sse":
 if __name__ == "__main__":
 
     if app_config.MCP_TRANSPORT == "stdio":
+
         def run_fastapi():
             uvicorn.run(
-                app, 
-                host=app_config.HOST, 
+                app,
+                host=app_config.HOST,
                 port=app_config.PORT,
                 log_level="critical",
-                access_log=False
+                access_log=False,
             )
-        
+
         api_thread = threading.Thread(target=run_fastapi, daemon=True)
         api_thread.start()
-        
+
         mcp.run(transport="stdio")
     else:
-        uvicorn.run(app, host=app_config.HOST, port=app_config.PORT, log_level=app_config.UVICORN_LOG_LEVEL)
+        uvicorn.run(
+            app,
+            host=app_config.HOST,
+            port=app_config.PORT,
+            log_level=app_config.UVICORN_LOG_LEVEL,
+        )

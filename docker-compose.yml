@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # PostgreSQL database with pgvector and Apache AGE extensions
   postgres:
@@ -30,30 +28,29 @@ services:
       dockerfile: Dockerfile
     container_name: raganything-api
     ports:
-      - "8004:8004"
-    environment:
-      # PostgreSQL connection (uses service name as host)
-      POSTGRES_USER: raganything
-      POSTGRES_PASSWORD: raganything
-      POSTGRES_DATABASE: raganything
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      # API Configuration (override from .env if needed)
-      OPEN_ROUTER_API_KEY: ${OPEN_ROUTER_API_KEY}
-      OPEN_ROUTER_API_URL: ${OPEN_ROUTER_API_URL:-https://openrouter.ai/api/v1}
-      # RAG Configuration
-      COSINE_THRESHOLD: ${COSINE_THRESHOLD:-0.2}
-      MAX_CONCURRENT_FILES: ${MAX_CONCURRENT_FILES:-1}
-      # Server Configuration
-      MCP_TRANSPORT: ${MCP_TRANSPORT:-sse}
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-["*"]}
+      - "8000:8000"
+    env_file:
+      - .env.docker
     depends_on:
       postgres:
         condition: service_healthy
-    volumes:
-      # Persist RAG storage and output directories
-      - rag_storage:/tmp/rag_storage
-      - output_data:/tmp/output
+    networks:
+      - raganything-network
+    restart: unless-stopped
+
+  # LightRAG Server with Web UI
+  lightrag-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.lightrag
+    container_name: raganything-lightrag
+    ports:
+      - "9621:9621"
+    env_file:
+      - .env.lightrag.server.docker
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - raganything-network
     restart: unless-stopped
