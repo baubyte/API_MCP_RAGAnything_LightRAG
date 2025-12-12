@@ -6,6 +6,7 @@ from application.requests.indexing_request import IndexFolderRequest
 
 logger = logging.getLogger(__name__)
 
+
 class IndexFolderUseCase:
     """
     Use case for indexing a folder of documents.

@@ -8,7 +8,10 @@ import logging
 from typing import Any, AsyncIterator, Optional
 from config import ProxyConfig
 from domain.ports.lightrag_proxy_client import LightRAGProxyClientPort
-from domain.entities.lightrag_proxy_entities import LightRAGProxyRequest, LightRAGProxyResponse
+from domain.entities.lightrag_proxy_entities import (
+    LightRAGProxyRequest,
+    LightRAGProxyResponse,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -46,13 +49,15 @@ class LightRAGProxyClient(LightRAGProxyClientPort):
     def client(self) -> httpx.AsyncClient:
         """Get the HTTP client, raising if not initialized."""
         if self._client is None:
-            raise RuntimeError("LightRAG proxy client not initialized. Call initialize() first.")
+            raise RuntimeError(
+                "LightRAG proxy client not initialized. Call initialize() first."
+            )
         return self._client
 
     async def get_openapi_spec(self) -> dict[str, Any]:
         """
         Fetch the OpenAPI specification from LightRAG API.
-        
+
         Returns:
             dict: The OpenAPI specification JSON.
         """
@@ -67,10 +72,10 @@ class LightRAGProxyClient(LightRAGProxyClientPort):
     def _build_headers(self, headers: dict[str, str]) -> dict[str, str]:
         """
         Build headers for forwarding, extracting Authorization if present.
-        
+
         Args:
             headers: Original headers from the request.
-            
+
         Returns:
             dict: Headers to forward to LightRAG.
         """
@@ -84,7 +89,9 @@ class LightRAGProxyClient(LightRAGProxyClientPort):
 
             # Forward API key header if present
             if "api_key_header_value" in headers:
-                request_headers["api_key_header_value"] = headers["api_key_header_value"]
+                request_headers["api_key_header_value"] = headers[
+                    "api_key_header_value"
+                ]
 
             # Forward Content-Type if present
             if "Content-Type" in headers:
@@ -98,10 +105,10 @@ class LightRAGProxyClient(LightRAGProxyClientPort):
     ) -> LightRAGProxyResponse:
         """
         Forward a request to LightRAG API.
-        
+
         Args:
             request: The proxy request containing method, path, body, params, headers.
-            
+
         Returns:
             LightRAGProxyResponse: The response from LightRAG API.
         """
@@ -156,10 +163,10 @@ class LightRAGProxyClient(LightRAGProxyClientPort):
     ) -> AsyncIterator[bytes]:  # type: ignore[override]
         """
         Forward a streaming request to LightRAG API.
-        
+
         Args:
             request: The proxy request containing method, path, body, params, headers.
-            
+
         Yields:
             bytes: Chunks of the streaming response.
         """
@@ -185,7 +192,9 @@ class LightRAGProxyClient(LightRAGProxyClientPort):
             if request.body is not None:
                 kwargs["json"] = request.body
 
-            logger.debug(f"Forwarding streaming {request.method} /{request.path} to LightRAG")
+            logger.debug(
+                f"Forwarding streaming {request.method} /{request.path} to LightRAG"
+            )
 
             async with stream_client.stream(**kwargs) as response:
                 async for chunk in response.aiter_bytes():
@@ -201,6 +210,7 @@ def get_lightrag_client_instance() -> LightRAGProxyClient:
     global _lightrag_client
     if _lightrag_client is None:
         from config import ProxyConfig
+
         proxy_config = ProxyConfig()  # type: ignore
         _lightrag_client = LightRAGProxyClient(proxy_config)
     return _lightrag_client

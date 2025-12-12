@@ -47,9 +47,7 @@ class LightRAGProxyUseCase:
             bool: True if the request should stream, False otherwise.
         """
         # Check if path matches streaming endpoints
-        path_supports_streaming = any(
-            sp in request.path for sp in self.STREAMING_PATHS
-        )
+        path_supports_streaming = any(sp in request.path for sp in self.STREAMING_PATHS)
 
         if not path_supports_streaming:
             return False
@@ -107,7 +105,9 @@ class LightRAGProxyUseCase:
         Raises:
             Exception: If the request fails.
         """
-        logger.debug(f"Proxying streaming to LightRAG: {request.method} /{request.path}")
+        logger.debug(
+            f"Proxying streaming to LightRAG: {request.method} /{request.path}"
+        )
 
         try:
             async for chunk in self.proxy_client.forward_stream(request):

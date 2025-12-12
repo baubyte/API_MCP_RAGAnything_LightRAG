@@ -6,8 +6,6 @@ from domain.entities.indexing_result import FileIndexingResult
 logger = logging.getLogger(__name__)
 
 
-
-
 class IndexFileUseCase:
     """
     Use case for indexing a single file.

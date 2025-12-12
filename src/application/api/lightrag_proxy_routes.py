@@ -79,7 +79,9 @@ async def build_lightrag_proxy_request(
         body=body,
         params=query_params,
         headers=headers,
-        content_type=content_type if content_type and "multipart" in content_type else None,
+        content_type=(
+            content_type if content_type and "multipart" in content_type else None
+        ),
         raw_content=raw_content,
     )
 
@@ -110,6 +112,7 @@ async def proxy_to_lightrag(
 
     # Check if this is a streaming endpoint
     if use_case.is_streaming_request(proxy_request):
+
         async def stream_generator():
             async for chunk in use_case.execute_stream(proxy_request):
                 yield chunk
