@@ -7,7 +7,7 @@ import shutil
 import os
 
 
-indexing_router = APIRouter(tags=["Indexing"])
+indexing_router = APIRouter(tags=["Multimodal Indexing"])
 
 
 @indexing_router.post(

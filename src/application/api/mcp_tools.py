@@ -3,8 +3,9 @@ MCP tools for RAGAnything.
 These tools are registered with FastMCP for Claude Desktop integration.
 """
 
-from dependencies import get_query_use_case
-from application.requests.query_request import QueryRequest
+import json
+from dependencies import get_lightrag_proxy_use_case
+from domain.entities.lightrag_proxy_entities import LightRAGProxyRequest
 from fastmcp import FastMCP
 
 
@@ -14,7 +15,7 @@ mcp = FastMCP("RAGAnything")
 
 @mcp.tool()
 async def query_knowledge_base(
-    query: str, mode: str = "naive", chunk_top_k: int = 10
+    query: str, mode: str = "naive", top_k: int = 10, only_need_context: bool = True
 ) -> str:
     """
     Search the RAGAnything knowledge base for relevant document chunks.
@@ -24,36 +25,40 @@ async def query_knowledge_base(
     - check it BEFORE responding from general knowledge.
 
     Default Strategy (use this first):
-    - mode="naive" with chunk_top_k=10 for fast, focused results
+    - mode="naive" with top_k=10 for fast, focused results
     - This works well for most queries
 
     Fallback Strategy (if no relevant results):
     - Ask user if they want a broader search
-    - Use mode="hybrid" with chunk_top_k=20 for comprehensive search
+    - Use mode="hybrid" with top_k=20 for comprehensive search
     - This casts a wider net and combines multiple search strategies
 
     Args:
         query: The user's question or search query (e.g., "What are the main findings?")
         mode: Search mode - "naive" (default, recommended), "local" (context-aware),
               "global" (document-level), or "hybrid" (comprehensive)
-        chunk_top_k: Number of chunks to retrieve (default 10, use 20 for broader search)
+        top_k: Number of chunks to retrieve (default 10, use 20 for broader search)
+        only_need_context: If True, returns only context chunks without LLM answer (default True)
 
     Returns:
-        JSON string containing:
-        - "chunks": Array of relevant text segments with references
-        - "count": Total number of chunks found
+        JSON string containing the query response from LightRAG
     """
-    use_case = await get_query_use_case()
+    use_case = await get_lightrag_proxy_use_case()
 
-    request = QueryRequest(
-        query=query,
-        mode=mode,
-        only_need_context=True,
-        chunk_top_k=chunk_top_k,
-        include_references=True,
-        enable_rerank=False,
+    # Build request body for LightRAG /query endpoint
+    request_body = {
+        "query": query,
+        "mode": mode,
+        "top_k": top_k,
+        "only_need_context": only_need_context,
+    }
+
+    proxy_request = LightRAGProxyRequest(
+        method="POST",
+        path="query",
+        body=request_body,
     )
 
-    result = await use_case.execute(request)
+    response = await use_case.execute(proxy_request)
 
-    return result.model_dump_json()
+    return response.content.decode("utf-8")

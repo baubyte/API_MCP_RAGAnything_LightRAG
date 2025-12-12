@@ -107,3 +107,19 @@ class RAGConfig(BaseSettings):
     RAG_STORAGE_TYPE: str = Field(
         default="postgres", description="Storage type for RAG system"
     )
+
+
+class ProxyConfig(BaseSettings):
+    """
+    Configuration for the LightRAG API proxy.
+    """
+
+    LIGHTRAG_API_URL: str = Field(
+        default="http://localhost:9621", description="LightRAG API base URL"
+    )
+    LIGHTRAG_TIMEOUT: int = Field(
+        default=60, description="Default timeout for proxy requests in seconds"
+    )
+    LIGHTRAG_STREAM_TIMEOUT: int = Field(
+        default=300, description="Timeout for streaming proxy requests in seconds"
+    )

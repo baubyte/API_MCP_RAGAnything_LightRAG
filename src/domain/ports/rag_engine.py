@@ -1,7 +1,5 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional, List
-from domain.entities.query_result import QueryResult
-from domain.entities.query_entity import Query
 from domain.entities.indexing_result import FileIndexingResult, FolderIndexingResult
 
 
@@ -47,22 +45,6 @@ class RAGEnginePort(ABC):
 
         Returns:
             FolderIndexingResult: Structured result with statistics and file details.
-        """
-        pass
-
-    @abstractmethod
-    async def query(self, query: Query) -> QueryResult:
-        """
-        Query the RAG system.
-
-        Args:
-            query: The query string.
-            mode: Query mode (naive, local, global, hybrid).
-            only_need_context: Return only context without LLM generation.
-            **kwargs: Additional query parameters.
-
-        Returns:
-            QueryResult: The structured query result.
         """
         pass
 

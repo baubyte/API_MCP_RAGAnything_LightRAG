@@ -8,11 +8,17 @@ import tempfile
 from raganything import RAGAnything, RAGAnythingConfig
 from lightrag.llm.openai import openai_complete_if_cache, openai_embed
 from lightrag.utils import EmbeddingFunc
-from config import DatabaseConfig, LLMConfig, RAGConfig, AppConfig
+from config import DatabaseConfig, LLMConfig, RAGConfig, AppConfig, ProxyConfig
 from infrastructure.rag.lightrag_adapter import LightRAGAdapter
+from infrastructure.proxy.lightrag_proxy_client import (
+    LightRAGProxyClient,
+    get_lightrag_client_instance,
+    init_lightrag_client,
+    close_lightrag_client,
+)
 from application.use_cases.index_file_use_case import IndexFileUseCase
 from application.use_cases.index_folder_use_case import IndexFolderUseCase
-from application.use_cases.query_use_case import QueryUseCase
+from application.use_cases.lightrag_proxy_use_case import LightRAGProxyUseCase
 
 
 # ============= CONFIG INITIALIZATION =============
@@ -21,6 +27,7 @@ app_config = AppConfig()  # type: ignore
 db_config = DatabaseConfig()  # type: ignore
 llm_config = LLMConfig()  # type: ignore
 rag_config = RAGConfig()  # type: ignore
+proxy_config = ProxyConfig()  # type: ignore
 
 # ============= ENVIRONMENT SETUP =============
 
@@ -165,11 +172,22 @@ async def get_index_folder_use_case() -> IndexFolderUseCase:
     return IndexFolderUseCase(rag_adapter, OUTPUT_DIR)
 
 
-async def get_query_use_case() -> QueryUseCase:
+async def get_lightrag_client() -> LightRAGProxyClient:
     """
-    Dependency injection function for QueryUseCase.
+    Dependency injection function for LightRAG proxy client.
 
     Returns:
-        QueryUseCase: The configured use case.
+        LightRAGProxyClient: The configured proxy client.
     """
-    return QueryUseCase(rag_adapter)
+    return get_lightrag_client_instance()
+
+
+async def get_lightrag_proxy_use_case() -> LightRAGProxyUseCase:
+    """
+    Dependency injection function for LightRAGProxyUseCase.
+
+    Returns:
+        LightRAGProxyUseCase: The configured use case for proxying requests.
+    """
+    proxy_client = get_lightrag_client_instance()
+    return LightRAGProxyUseCase(proxy_client)

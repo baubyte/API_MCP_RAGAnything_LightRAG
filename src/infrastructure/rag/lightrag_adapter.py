@@ -2,7 +2,6 @@ from typing import Optional, List
 import time
 import os
 from domain.ports.rag_engine import RAGEnginePort
-from domain.entities.query_result import QueryResult
 from domain.entities.indexing_result import (
     FileIndexingResult,
     FolderIndexingResult,
@@ -11,9 +10,7 @@ from domain.entities.indexing_result import (
     IndexingStatus,
 )
 from raganything import RAGAnything
-from lightrag import QueryParam
 from fastapi.logger import logger
-from domain.entities.query_entity import Query
 
 
 class LightRAGAdapter(RAGEnginePort):
@@ -186,44 +183,3 @@ class LightRAGAdapter(RAGEnginePort):
                 processing_time_ms=round(processing_time_ms, 2),
                 error=error_msg,
             )
-
-    async def query(
-        self,
-        query: Query,
-    ) -> QueryResult:
-        """
-        Query the RAG system.
-
-        Args:
-            query: The query string.
-            mode: Query mode (naive, local, global, hybrid).
-            only_need_context: Return only context without LLM generation.
-            **kwargs: Additional query parameters.
-
-        Returns:
-            QueryResult: The structured query result.
-        """
-        # Ensure initialized
-        await self.initialize()
-
-        # Create QueryParam from arguments
-        query_param = QueryParam(
-            **query.model_dump(exclude={"query", "include_metadata"})
-        )
-
-        result = QueryResult(**await self.rag.lightrag.aquery_data(query.query, param=query_param))  # type: ignore
-
-        if not query.include_metadata:
-            result = QueryResult(**result.model_dump(exclude={"metadata"}))
-
-        if not query.include_references:
-            result = QueryResult(**result.model_dump(exclude={"data"}))
-
-        answer = None
-
-        if not query.only_need_context:
-            answer = await self.rag.lightrag.aquery(query.query, param=query_param)  # type: ignore
-
-        result.answer = answer if answer else None  # type: ignore
-
-        return result
