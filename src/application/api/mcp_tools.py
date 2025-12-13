@@ -3,7 +3,6 @@ MCP tools for RAGAnything.
 These tools are registered with FastMCP for Claude Desktop integration.
 """
 
-import json
 from dependencies import get_lightrag_proxy_use_case
 from domain.entities.lightrag_proxy_entities import LightRAGProxyRequest
 from fastmcp import FastMCP
@@ -19,10 +18,6 @@ async def query_knowledge_base(
 ) -> str:
     """
     Search the RAGAnything knowledge base for relevant document chunks.
-
-    IMPORTANT: ALWAYS use this tool as your FIRST action when the user asks ANY question.
-    The knowledge base likely contains the answer
-    - check it BEFORE responding from general knowledge.
 
     Default Strategy (use this first):
     - mode="naive" with top_k=10 for fast, focused results

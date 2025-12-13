@@ -27,8 +27,4 @@ USER appuser
 
 EXPOSE 9621
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:9621/health || exit 1
-
 CMD ["lightrag-server", "--host", "0.0.0.0", "--port", "9621"]
