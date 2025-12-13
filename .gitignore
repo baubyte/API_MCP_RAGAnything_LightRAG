@@ -7,3 +7,4 @@ output
 .env.lightrag.server.docker
 __pycache__
 __init__.py
+.mypy_cache
